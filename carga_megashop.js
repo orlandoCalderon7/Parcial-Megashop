@@ -9,6 +9,30 @@ db.pedidos.drop();
 db.historial_estados.drop();
 db.carritos.drop();
 
+// Criterio 1: Crear colección 'pedidos' con validador $jsonSchema
+db.createCollection("pedidos", {
+  validator: {
+    $jsonSchema: {
+      bsonType: "object",
+      required: ["codigo_pedido", "cliente_id", "estado_actual", "items", "total"],
+      properties: {
+        codigo_pedido: { bsonType: "string", description: "Código único del pedido" },
+        cliente_id: { bsonType: "objectId", description: "Referencia al cliente" },
+        estado_actual: {
+          enum: ["pendiente", "preparando", "en_camino", "entregado", "cancelado"],
+          description: "Solo se permiten estados válidos del flujo de delivery"
+        },
+        items: {
+          bsonType: "array",
+          minItems: 1,
+          description: "Debe contener al menos un producto"
+        },
+        total: { bsonType: "decimal", description: "Monto total en formato Decimal128" }
+      }
+    }
+  }
+});
+
 const distritos = ["Los Olivos", "San Martín de Porres", "Independencia", "Comas", "Miraflores", "San Isidro"];
 const categorias = ["Comida Rápida", "Bebidas", "Abarrotes", "Postres", "Farmacia"];
 const estados = ["pendiente", "preparando", "en_camino", "entregado", "cancelado"];
@@ -138,9 +162,11 @@ for (let i = 0; i < 25; i++) {
 }
 db.carritos.insertMany(carritosDocs);
 
-// Crear índices de optimización y TTL
+// Criterio 1: Índice compuesto siguiendo la regla ESR (Equality: estado_actual, Sort: total, Range: fecha_pedido)
+db.pedidos.createIndex({ estado_actual: 1, total: -1, fecha_pedido: 1 });
+
+// Índices adicionales de optimización y TTL
 db.pedidos.createIndex({ cliente_id: 1 });
-db.pedidos.createIndex({ fecha_pedido: -1 });
 db.clientes.createIndex({ email: 1 }, { unique: true });
 db.carritos.createIndex({ cliente_id: 1 });
 db.carritos.createIndex({ ultima_actualizacion: 1 }, { expireAfterSeconds: 604800 });
@@ -154,4 +180,4 @@ const totalRegistros =
   db.historial_estados.countDocuments() +
   db.carritos.countDocuments();
 
-print("Carga completada. Total de registros insertados: " + totalRegistros);
+print("Carga completada con validador $jsonSchema e índice ESR. Total de registros: " + totalRegistros);

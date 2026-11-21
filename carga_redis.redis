@@ -1,0 +1,20 @@
+# 1. SESIONES con Strings + TTL de 30 minutos (1800 segundos)
+SET sesion:tok_98a7f6 "cliente1@megashop.com" EX 1800
+SET sesion:tok_45b2c1 "cliente2@megashop.com" EX 1800
+
+# 2. CARRITOS ACTIVOS con Hashes + TTL de 2 horas (7200 segundos)
+HSET carrito:cliente1 PROD-001 2 PROD-005 1 PROD-010 3
+EXPIRE carrito:cliente1 7200
+
+HSET carrito:cliente2 PROD-002 1 PROD-008 4
+EXPIRE carrito:cliente2 7200
+
+# 3. ESTADO DE PEDIDOS EN TIEMPO REAL con Hashes + TTL de 24 horas (86400 segundos)
+HSET pedido:estado:PED-2026-0001 estado "en_camino" repartidor "Repartidor 2" ubicacion "Av. Universitaria" eta_min "12"
+EXPIRE pedido:estado:PED-2026-0001 86400
+
+HSET pedido:estado:PED-2026-0002 estado "preparando" repartidor "Repartidor 3" ubicacion "Local Central" eta_min "25"
+EXPIRE pedido:estado:PED-2026-0002 86400
+
+# 4. RANKINGS DE PRODUCTOS MÁS PEDIDOS con Sorted Sets (ZADD)
+ZADD ranking:productos 45 "Producto Delivery 1" 110 "Producto Delivery 2" 60 "Producto Delivery 3" 82 "Producto Delivery 5" 95 "Producto Delivery 10"
